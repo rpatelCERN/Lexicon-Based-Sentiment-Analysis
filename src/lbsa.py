@@ -151,11 +151,20 @@ def get_cache_dir():
         os.makedirs(LBSA_DATA_DIR)
     return LBSA_DATA_DIR
 
+def load_custom_lexicon():
+    LBSA_DATA_DIR = get_cache_dir()
+    sentiment_names = ["positive", "negative", "anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
+    lexicon_path = os.path.join(__file__, os.path.join(LBSA_DATA_DIR, 'custom/TemplateNRCEmotions.csv' ))
+    nrc_all_languages = pd.read_csv(lexicon_path, encoding='utf8')
+    nrc_all_languages.rename(columns=lambda x: x.replace('Word', '').split('Translation')[0].rstrip(' ').lower(), inplace=True)
+    for column_name in sentiment_names:
+        nrc_all_languages[column_name] = nrc_all_languages[column_name].astype(np.int32)
+    return nrc_all_languages, sentiment_names
 
 def load_nrc_lexicon():
     LBSA_DATA_DIR = get_cache_dir()
     nrc_filename = "NRC-Emotion-Lexicon-v0.92-InManyLanguages-web"
-
+    print(LBSA_DATA_DIR)
     def download_lexicon():
         LEXICON_URL = "http://www.saifmohammad.com/WebDocs/%s.xlsx" % nrc_filename
         progressbar = DownloadProgressBar('Downloading NRC lexicon')
@@ -252,6 +261,8 @@ def load_mpqa_sujectivity_lexicon(name='', organization='', email=''):
 
 def load_afinn_opinion_lexicon():
     LBSA_DATA_DIR = get_cache_dir()
+    print(LBSA_DATA_DIR)
+    '''
     if not os.path.isdir(os.path.join(LBSA_DATA_DIR, "afinn")):
         os.makedirs(os.path.join(LBSA_DATA_DIR, "afinn"))
     if not os.path.exists(os.path.join(LBSA_DATA_DIR, "afinn/AFINN/AFINN-111.txt")):
@@ -265,9 +276,9 @@ def load_afinn_opinion_lexicon():
             zf.extractall(path=os.path.join(LBSA_DATA_DIR, "afinn"))
         # Remove zip archive
         os.remove(filepath)
-    
+    '''
     words, values = list(), list()
-    with open(os.path.join(LBSA_DATA_DIR, 'afinn/AFINN/AFINN-111.txt')) as f:
+    with open(os.path.join(LBSA_DATA_DIR, 'afinn/AFINN/AFINN-en-165.txt')) as f:
         for line in f.readlines():
             items = line.rstrip().split('\t')
             if len(items) == 2:
@@ -290,15 +301,19 @@ def tokenize(text):
 
 
 def create_sa_lexicon(source='nrc', language='english'):
+    to_remove = ['positive', 'negative']
     if source == 'nrc':
         nrc_all_languages, tag_names = load_nrc_lexicon()
-        to_remove = ['positive', 'negative']
         nrc_all_languages.drop(to_remove, axis=1, inplace=True)
         for tag_name in to_remove:
             tag_names.remove(tag_name)
         lexicon = Lexicon(nrc_all_languages, tag_names, source, language=language)
     else:
-        raise UnknownSource('Source %s does not provide any available sentiment analysis lexicon')
+        nrc_all_languages, tag_names = load_custom_lexicon()
+        for tag_name in to_remove:
+                   tag_names.remove(tag_name)
+        lexicon = Lexicon(nrc_all_languages, tag_names, source, language=language)
+        #raise UnknownSource('Source %s does not provide any available sentiment analysis lexicon')
     return lexicon
 
 
