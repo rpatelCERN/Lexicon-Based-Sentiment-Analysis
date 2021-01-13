@@ -50,15 +50,15 @@ class Lexicon:
         for key, value in zip(self.dataframe[self.language], tags):
             if value.sum() != 0:
                 table[key] = value
-    
+
     def get(self, token):
         if token.isdigit():
             return None
         return self.table.get(token)
-    
+
     def get_n_tags(self):
         return len(self.tag_names)
-    
+
     def get_tag_names(self):
         return self.tag_names
 
@@ -74,7 +74,7 @@ class Lexicon:
             return { name: counter for name, counter in zip(self.tag_names, counters) }
         else:
             return counters
-    
+
     def __len__(self):
         return len(self.dataframe)
 
@@ -152,9 +152,9 @@ def get_cache_dir():
     return LBSA_DATA_DIR
 
 def load_custom_lexicon():
-    LBSA_DATA_DIR = get_cache_dir()
-    sentiment_names = ["positive", "negative", "anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
-    lexicon_path = os.path.join(__file__, os.path.join(LBSA_DATA_DIR, 'custom/TemplateNRCEmotions.csv' ))
+    cwd=os.getcwd()
+    sentiment_names = ["positive", "negative", "anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust","disconnection","connection"]
+    lexicon_path = os.path.join(__file__, os.path.join(cwd,'data/FilledEmotions.csv' ))
     nrc_all_languages = pd.read_csv(lexicon_path, encoding='utf8')
     nrc_all_languages.rename(columns=lambda x: x.replace('Word', '').split('Translation')[0].rstrip(' ').lower(), inplace=True)
     for column_name in sentiment_names:
@@ -199,7 +199,7 @@ def load_nrc_lexicon():
             writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
             for rownum in range(sheet.nrows):
                 writer.writerow(sheet.row_values(rownum))
-        
+
         # Remove XLSX file
         os.remove(os.path.join(LBSA_DATA_DIR, "%s.xlsx" % nrc_filename))
 
@@ -241,7 +241,7 @@ def load_mpqa_sujectivity_lexicon(name='', organization='', email=''):
             data={"name": "", "organization": "", "email": "", "dataset":"subj_lexicon"})
         zf = zipfile.ZipFile(io.BytesIO(response.content))
         zf.extractall(path=os.path.join(LBSA_DATA_DIR, "mpqa"))
-    
+
     with open(filepath) as f:
         words, positive, negative, strong_subj = list(), list(), list(), list()
         for line in f.readlines():
@@ -257,7 +257,7 @@ def load_mpqa_sujectivity_lexicon(name='', organization='', email=''):
         'negative': np.asarray(negative, dtype=np.int),
         'strong_subjectivty': np.asarray(strong_subj, dtype=np.int)
     })
-        
+
 
 def load_afinn_opinion_lexicon():
     LBSA_DATA_DIR = get_cache_dir()
