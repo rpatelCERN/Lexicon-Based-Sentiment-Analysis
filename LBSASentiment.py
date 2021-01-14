@@ -6,7 +6,16 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas  as pd
 import sys
-file=sys.argv[1]
+from datetime import datetime, timezone
+import argparse
+import * from VaderWiktionary
+parser = argparse.ArgumentParser(description="Filenames and format for Sentiment Analysis")
+parser.add_argument("-i","--input", dest="input", default = 'WebScrape/NidiaDHomeless.txt',help="input file", metavar="input")
+parser.add_argument("-o","--output", dest="output", default = 'output/Test.csv',help="output file", metavar="output")
+
+parser.add_argument('--twitter', dest="twitter",default=False, action='store_true')
+args = parser.parse_args()
+#file=sys.argv[1]
 op_lexicon = lbsa.get_lexicon('opinion', language='english', source='afinn')###close to what you get with AFINN
 sa_lexicon = lbsa.get_lexicon('sa', language='english', source='custom')#### Strange classification
 
@@ -68,26 +77,34 @@ def AnalyzeStory(file):
         for key in SentAnalysis.keys():OutputDictionary[key].append(SentAnalysis[key])
             #.append(SentScore['positive']-SentScore['negative'])
     outputDF=pd.DataFrame(OutputDictionary)
-    outputDF.to_csv("output/Test.csv")
+    outputDF.to_csv("output/%s" %args.output)
 
 
 def AnalyzeTweet(file):
     TweetTL=pd.read_table(file)
     Tweets=TweetTL['tweet'].to_list()
+    Date=TweetTL['date'].to_list()
+    Time=TweetTL['time'].to_list()
+    #print(Date[0],Time[0])
     nlp = spacy.load('en')
     docs=nlp.pipe(Tweets)
     matcher = PhraseMatcher(nlp.vocab)
     LoadMatchPatterns(nlp,matcher)
-
-    OutputDictionary={'TextParagraph':[],'SentimentScore':[],'MatchedPhrases':[],'Challenge':[],'Renewal':[],
+    ###Create date/time stamp for tweet
+    OutputDictionary={'TextParagraph':[],'Time':[],'SentimentScore':[],'MatchedPhrases':[],'Challenge':[],'Renewal':[],
         'anger': [], 'anticipation': [], 'disgust': [], 'fear': [], 'joy': [], 'sadness': [], 'surprise': [],
         'trust': [], 'disconnection': [], 'connection': []}
-
+    index=0
     for doc in docs:
+        #print(doc.text)
         Sentiment=op_lexicon.process(doc.text)
         SentScore=Sentiment["positive"]-Sentiment["negative"]
         MatchedCategory,MatchedPhrases=MatchPatterns(nlp,matcher,doc)
         if SentScore==0 and len(MatchedPhrases)==0 :continue
+        #datetime.fromisoformat('%s %s'%(Date[index],Time[index]))
+        OutputDictionary['Time'].append('%s %s'%(Date[index],Time[index]))
+        #print(datetime.isoformat())
+        index=index+1
         #for match_id, start, end in matcher(doc):print(doc.text,doc[start:end],nlp.vocab.strings[match_id])
         #This doesn't work as well for tweets
         OutputDictionary['TextParagraph'].append(doc.text)
@@ -102,6 +119,8 @@ def AnalyzeTweet(file):
         for key in SentAnalysis.keys():OutputDictionary[key].append(SentAnalysis[key])
 
     outputDF=pd.DataFrame(OutputDictionary)
-    outputDF.to_csv("output/Test.csv")
-AnalyzeTweet(file)
-#AnalyzeStory(file)
+    outputDF.to_csv("output/%s" %args.output)
+
+file=args.input
+if args.twitter:AnalyzeTweet(file)
+else: AnalyzeStory(file)
