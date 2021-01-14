@@ -13,7 +13,7 @@ import xlrd
 import csv
 import zipfile
 import requests
-
+from src import VaderWiktionary
 try: # Python 3
     from urllib.request import urlretrieve
 except ImportError: # Python 2
@@ -21,7 +21,7 @@ except ImportError: # Python 2
 
 
 TOKENIZER = re.compile(f'([!"#$%&\'()*+,-./:;<=>?@[\\]^_`|~“”¨«»®´·º½¾¿¡§£₤‘’\n\t])')
-
+NEGATE,BOOSTER_DICT=VaderWiktionary.LoadWiktionary()
 
 class UnknownSource(Exception):
 
@@ -66,10 +66,15 @@ class Lexicon:
         tokens = tokenize(text) if not isinstance(text, list) else text
         n_tags = self.get_n_tags()
         counters = np.zeros(n_tags, dtype=np.int)
-        for token in tokens:
-            value = self.get(token.lower())
+        for i in range(len(tokens)):
+        #for token in tokens:
+            value = self.get(tokens[i].lower())
             if value is not None:
-                counters += value
+                if i!=0 and tokens[i-1] in NEGATE:counters -=value### negation
+                if i!=0 and tokens[i-1] in BOOSTER_DICT:
+                    counters +=value### negation
+                    counters+=BOOSTER_DICT[tokens[i-1]]
+                else:counters += value
         if as_dict:
             return { name: counter for name, counter in zip(self.tag_names, counters) }
         else:
@@ -261,7 +266,6 @@ def load_mpqa_sujectivity_lexicon(name='', organization='', email=''):
 
 def load_afinn_opinion_lexicon():
     LBSA_DATA_DIR = get_cache_dir()
-    print(LBSA_DATA_DIR)
     '''
     if not os.path.isdir(os.path.join(LBSA_DATA_DIR, "afinn")):
         os.makedirs(os.path.join(LBSA_DATA_DIR, "afinn"))

@@ -8,7 +8,6 @@ import pandas  as pd
 import sys
 from datetime import datetime, timezone
 import argparse
-import * from VaderWiktionary
 parser = argparse.ArgumentParser(description="Filenames and format for Sentiment Analysis")
 parser.add_argument("-i","--input", dest="input", default = 'WebScrape/NidiaDHomeless.txt',help="input file", metavar="input")
 parser.add_argument("-o","--output", dest="output", default = 'output/Test.csv',help="output file", metavar="output")
